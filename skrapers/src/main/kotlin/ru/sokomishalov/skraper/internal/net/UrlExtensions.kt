@@ -23,6 +23,8 @@ import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.HttpURLConnection.*
 import java.net.URL
+import java.net.URLDecoder
+import kotlin.text.Charsets.UTF_8
 
 
 /**
@@ -57,6 +59,20 @@ internal suspend fun URL.request(
         inputStream.use { it.readBytes() }
     }
 }
+
+val URL.queryParams: Map<String, String>
+    get() {
+        return query
+                .split("&".toRegex())
+                .map {
+                    val idx = it.indexOf("=")
+                    val key = URLDecoder.decode(it.substring(0, idx), UTF_8)
+                    val value = URLDecoder.decode(it.substring(idx + 1), UTF_8)
+
+                    key to value
+                }
+                .toMap()
+    }
 
 private fun HttpURLConnection.applyData(
         method: HttpMethodType,

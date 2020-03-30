@@ -20,8 +20,11 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import ru.sokomishalov.skraper.client.HttpMethodType
 import ru.sokomishalov.skraper.client.HttpMethodType.GET
+import ru.sokomishalov.skraper.internal.jsoup.getMetaPropertyMap
+import ru.sokomishalov.skraper.internal.map.firstNotNull
+import ru.sokomishalov.skraper.internal.number.div
 import ru.sokomishalov.skraper.internal.serialization.readJsonNodes
-import ru.sokomishalov.skraper.model.URLString
+import ru.sokomishalov.skraper.model.*
 import java.nio.charset.Charset
 import kotlin.text.Charsets.UTF_8
 
@@ -62,4 +65,59 @@ suspend fun SkraperClient.fetchDocument(
     return runCatching {
         request(url, method, headers, body)?.run { Jsoup.parse(toString(charset)) }
     }.getOrNull()
+}
+
+/**
+ * @see <a href="https://ogp.me/">open graph protocol</a>
+ */
+suspend fun SkraperClient.fetchOpenGraphMedia(media: Media): Media {
+    val page = fetchDocument(url = media.url)
+
+    return page?.run {
+        val metaMap = getMetaPropertyMap()
+
+        with(metaMap) {
+            when (media) {
+                is Video -> {
+                    val videoWidth = firstNotNull("og:video:width")?.toIntOrNull()
+                    val videoHeight = firstNotNull("og:video:height")?.toIntOrNull()
+                    val videoUrl = firstNotNull("og:video", "og:video:url", "og:video:secure_url")
+
+                    val thumbWidth = firstNotNull("og:image:width")?.toIntOrNull()
+                    val thumbHeight = firstNotNull("og:image:height")?.toIntOrNull()
+                    val thumbUrl = firstNotNull("og:image", "og:image:url", "og:image:secure_url")
+
+                    media.copy(
+                            url = videoUrl ?: media.url,
+                            aspectRatio = (videoWidth / videoHeight) ?: media.aspectRatio,
+                            thumbnail = (thumbUrl ?: media.thumbnail?.url)?.let { url ->
+                                Image(
+                                        url = url,
+                                        aspectRatio = (thumbWidth / thumbHeight)
+                                                ?: (videoWidth / videoHeight)
+                                                ?: media.thumbnail?.aspectRatio
+                                )
+                            }
+
+                    )
+                }
+                is Image -> {
+                    val imageWidth = firstNotNull("og:image:width")?.toIntOrNull()
+                    val imageHeight = firstNotNull("og:image:height")?.toIntOrNull()
+                    val imageUrl = firstNotNull("og:image", "og:image:url", "og:image:secure_url")
+
+                    media.copy(
+                            url = imageUrl ?: media.url,
+                            aspectRatio = (imageWidth / imageHeight) ?: media.aspectRatio
+                    )
+                }
+                is Audio -> {
+                    val audioUrl = firstNotNull("og:audio", "og:audio:url", "og:audio:secure_url")
+                    media.copy(
+                            url = audioUrl ?: media.url
+                    )
+                }
+            }
+        }
+    } ?: media
 }

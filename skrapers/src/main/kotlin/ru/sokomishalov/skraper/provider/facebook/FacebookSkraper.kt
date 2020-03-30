@@ -22,13 +22,16 @@ import ru.sokomishalov.skraper.Skraper
 import ru.sokomishalov.skraper.SkraperClient
 import ru.sokomishalov.skraper.client.jdk.DefaultBlockingSkraperClient
 import ru.sokomishalov.skraper.fetchDocument
+import ru.sokomishalov.skraper.fetchOpenGraphMedia
 import ru.sokomishalov.skraper.internal.jsoup.*
+import ru.sokomishalov.skraper.internal.net.queryParams
 import ru.sokomishalov.skraper.internal.number.div
 import ru.sokomishalov.skraper.internal.serialization.getByPath
 import ru.sokomishalov.skraper.internal.serialization.getInt
 import ru.sokomishalov.skraper.internal.serialization.getString
 import ru.sokomishalov.skraper.internal.serialization.readJsonNodes
 import ru.sokomishalov.skraper.model.*
+import java.net.URL
 
 
 /**
@@ -89,6 +92,10 @@ class FacebookSkraper @JvmOverloads constructor(
 
     private suspend fun getPage(path: String): Document? {
         return client.fetchDocument(url = baseUrl.buildFullURL(path = path))
+    }
+
+    override suspend fun resolve(media: Media): Media {
+        return client.fetchOpenGraphMedia(media)
     }
 
     private fun JsonNode?.prepareMetaInfoMap(): Map<String, JsonNode> {
@@ -224,8 +231,15 @@ class FacebookSkraper @JvmOverloads constructor(
             else -> getFirstElementByClass("uiScaledImageContainer")
                     ?.getFirstElementByTag("img")
                     ?.run {
+                        val url = attr("src")?.let {
+                            when {
+                                "safe_image.php" in it -> URL(it).queryParams["url"]
+                                else -> it
+                            }
+                        }.orEmpty()
+
                         listOf(Image(
-                                url = attr("src"),
+                                url = url,
                                 aspectRatio = attr("width").toDoubleOrNull() / attr("height").toDoubleOrNull()
                         ))
                     }

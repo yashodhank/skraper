@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ru.sokomishalov.skraper
+@file:Suppress("NOTHING_TO_INLINE")
 
-import ru.sokomishalov.skraper.client.HttpMethodType
-import ru.sokomishalov.skraper.client.HttpMethodType.GET
-import ru.sokomishalov.skraper.internal.consts.DEFAULT_USER_AGENT
-import ru.sokomishalov.skraper.model.URLString
+package ru.sokomishalov.skraper.internal.map
 
 /**
  * @author sokomishalov
  */
-interface SkraperClient {
 
-    suspend fun request(
-            url: URLString,
-            method: HttpMethodType = GET,
-            headers: Map<String, String> = mapOf("User-Agent" to DEFAULT_USER_AGENT),
-            body: ByteArray? = null
-    ): ByteArray?
-
+internal inline fun <K, V : Any> Map<K, V>.firstNotNull(vararg keys: K): V? {
+    return keys.mapNotNull { this[it] }.firstOrNull()
 }

@@ -16,6 +16,8 @@
 package ru.sokomishalov.skraper.provider.facebook
 
 import org.junit.Test
+import ru.sokomishalov.skraper.model.Image
+import ru.sokomishalov.skraper.model.Video
 import ru.sokomishalov.skraper.provider.SkraperTck
 
 /**
@@ -45,5 +47,11 @@ class FacebookSkraperTest : SkraperTck() {
     @Test
     fun `Check user page info`() {
         assertPageInfo { skraper.getUserInfo(username = username) }
+    }
+
+    @Test
+    fun `Check media resolving`() {
+        assertMediaResolved(Video("https://www.facebook.com/UKGuff/videos/216184746137024/"))
+        assertMediaResolved(Image("https://www.facebook.com/memes/photos/a.527860673898191/5283528444998033/"))
     }
 }

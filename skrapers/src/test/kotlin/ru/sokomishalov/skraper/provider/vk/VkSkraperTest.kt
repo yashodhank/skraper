@@ -16,6 +16,8 @@
 package ru.sokomishalov.skraper.provider.vk
 
 import org.junit.Test
+import ru.sokomishalov.skraper.model.Image
+import ru.sokomishalov.skraper.model.Video
 import ru.sokomishalov.skraper.provider.SkraperTck
 
 
@@ -46,5 +48,11 @@ class VkSkraperTest : SkraperTck() {
     @Test
     fun `Check user info`() {
         assertPageInfo { skraper.getUserInfo(username = username) }
+    }
+
+    @Test
+    fun `Check media resolving`() {
+        assertMediaResolved(Video("https://vk.com/videos1?z=video-29534144_456240620%2Fpl_1_-2"))
+        assertMediaResolved(Image("https://vk.com/photo1_456316241"))
     }
 }

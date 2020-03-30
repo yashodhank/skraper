@@ -42,9 +42,7 @@ class KtorSkraperClient(
             this.method = HttpMethod.parse(method.name)
             headers
                     .filterKeys { it !in UnsafeHeadersList }
-                    .forEach { (k, v) ->
-                        header(k, v)
-                    }
+                    .forEach { (k, v) -> header(k, v) }
             body?.let {
                 this.body = ByteArrayContent(
                         bytes = it,
